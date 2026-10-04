@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-*/
+release/
+*.log
+.DS_Store
+# README tells people to copy .npmrc.example here; that file is per-machine
+# (registry mirror, cache path) and must never be tracked.
+.npmrc

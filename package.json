@@ -1,0 +1,117 @@
+{
+  "name": "bonfire-desktop",
+  "version": "1.0.0-rc.1",
+  "private": false,
+  "type": "module",
+  "description": "Bonfire desktop client — an Electron shell over the gopan drive API, with all HTTP in the main process and credentials kept in the OS keystore.",
+  "main": "src/main/index.js",
+  "author": "hcy_neo <hr1234562345@outlook.com>",
+  "license": "MIT",
+  "keywords": [
+    "electron",
+    "desktop-client",
+    "cloud-drive",
+    "fluent"
+  ],
+  "homepage": "https://github.com/hcymc/Bonfire-desktop#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hcymc/Bonfire-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hcymc/Bonfire-desktop/issues"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "start": "electron .",
+    "start:debug": "electron . --inspect-main",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.js\"",
+    "icons": "node scripts/make-icons.mjs",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win --x64 && electron-builder --win --arm64 && node scripts/pack-portable.mjs",
+    "dist:win:x64": "electron-builder --win --x64",
+    "dist:win:arm64": "electron-builder --win --arm64",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder -mwl",
+    "portable": "node scripts/pack-portable.mjs"
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.bonfire.desktop",
+    "productName": "Bonfire",
+    "copyright": "Copyright © hcy_neo",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "build/tray.png",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "shortcutName": "Bonfire",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Bonfire-${version}-${arch}-setup.exe"
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "category": "Utility",
+      "synopsis": "Desktop client for the gopan drive",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "desktopName": "com.bonfire.desktop",
+      "syncDesktopName": true
+    }
+  }
+}

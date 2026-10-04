@@ -1,0 +1,10 @@
+# Optional npm mirrors. Copy to .npmrc if your network needs them.
+# Never edit the global npm config just to reach a mirror.
+registry=https://registry.npmjs.org
+fund=false
+audit=false
+progress=false
+# CN mirrors:
+# registry=https://registry.npmmirror.com
+# electron_mirror=https://npmmirror.com/mirrors/electron/
+# electron_builder_binaries_mirror=https://npmmirror.com/mirrors/electron-builder-binaries/

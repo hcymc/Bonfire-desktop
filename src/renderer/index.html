@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self';
+  style-src 'self';
+  img-src 'self' bonfire: data:;
+  media-src bonfire:;
+  frame-src bonfire:;
+  font-src 'self';
+  connect-src 'none';
+  form-action 'none';
+  base-uri 'none';
+  object-src 'none'>
+<meta name="color-scheme" content="dark">
+<title>篝火云盘</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<div class="shell">
+  <header class="tbar">
+    <span class="appicon" aria-hidden="true"><i class="i i-flame"></i></span>
+    <span class="apptitle">篝火云盘</span>
+    <nav class="crumbs" id="crumbs" aria-label="路径"></nav>
+    <span class="tbar-drag"></span>
+    <label class="search" title="搜索当前文件夹（Ctrl+F）">
+      <i class="i i-search" aria-hidden="true"></i>
+      <input id="search" placeholder="搜索" spellcheck="false" tabindex="-1">
+      <button class="clear hidden" id="searchClear" title="清除" tabindex="-1"><i class="i i-close"></i></button>
+    </label>
+    <button class="account" id="accountBtn" title="账号与设置">
+      <span class="avatar sm" id="meAvatar" aria-hidden="true"></span>
+      <span id="who">未登录</span>
+    </button>
+    <span class="caption-gap"></span>
+  </header>
+
+  <div class="body">
+    <nav class="rail" aria-label="导航">
+      <button class="nav active" data-view="files"><i class="i i-folder" aria-hidden="true"></i><span>我的文件</span></button>
+      <button class="nav" data-view="transfer"><i class="i i-sync" aria-hidden="true"></i><span>传输</span><span class="pill hidden" id="transferBadge"></span></button>
+      <button class="nav" data-view="shares"><i class="i i-link" aria-hidden="true"></i><span>分享</span></button>
+      <button class="nav" data-view="recycle"><i class="i i-trash" aria-hidden="true"></i><span>回收站</span></button>
+      <div class="rail-foot">
+        <div class="meter-card" id="meterCard" title="存储用量">
+          <div class="meter-line"><span>已用</span><span class="num" id="quotaText">—</span></div>
+          <div class="meter" role="progressbar"><i id="quotaFill"></i></div>
+          <div class="meter-line dim"><span id="quotaHost">未连接</span><span class="num" id="quotaTotal"></span></div>
+        </div>
+        <button class="nav" data-view="settings"><i class="i i-settings" aria-hidden="true"></i><span>设置</span></button>
+      </div>
+    </nav>
+
+    <main class="content">
+      <div class="cmdbar" id="cmdbar">
+        <button class="cmd" data-cmd="upload"><i class="i i-upload" aria-hidden="true"></i><span>上传</span></button>
+        <button class="cmd" data-cmd="mkdir"><i class="i i-newfolder" aria-hidden="true"></i><span>新建文件夹</span></button>
+        <span class="cmd-sep"></span>
+        <button class="cmd" data-cmd="open"><i class="i i-view" aria-hidden="true"></i><span>打开</span></button>
+        <button class="cmd" data-cmd="download"><i class="i i-download" aria-hidden="true"></i><span>下载</span></button>
+        <button class="cmd" data-cmd="rename"><i class="i i-edit" aria-hidden="true"></i><span>重命名</span></button>
+        <button class="cmd" data-cmd="move"><i class="i i-move" aria-hidden="true"></i><span>移动</span></button>
+        <button class="cmd" data-cmd="share"><i class="i i-share" aria-hidden="true"></i><span>分享</span></button>
+        <button class="cmd danger" data-cmd="delete"><i class="i i-trash" aria-hidden="true"></i><span>删除</span></button>
+        <span class="spacer"></span>
+        <button class="cmd ghost" data-cmd="details" id="cmdDetails" title="详情窗格"><i class="i i-info" aria-hidden="true"></i></button>
+        <button class="cmd ghost" data-cmd="refresh" title="刷新（F5）"><i class="i i-refresh" aria-hidden="true"></i></button>
+      </div>
+
+      <div class="workarea">
+      <section class="view" data-view="files">
+        <div class="list-head" id="listHead">
+          <span class="c-ic"></span>
+          <button class="c-name" data-sort="name">名称<i class="i i-sort" aria-hidden="true"></i></button>
+          <span class="c-size" data-sort="size">大小</span>
+          <span class="c-date" data-sort="date">修改时间</span>
+        </div>
+        <div class="list" id="fileList" tabindex="0" role="listbox" aria-label="文件"></div>
+      </section>
+
+      <section class="view hidden" data-view="transfer">
+        <div class="pane-head">
+          <h1>传输</h1>
+          <span class="spacer"></span>
+          <button class="btn ghost sm" id="clearFinished">清除已完成</button>
+        </div>
+        <div id="transferList" class="tlist"></div>
+        <p class="note">上传按 16 MiB 分片，断网或重启后从缺失的分片继续；下载用 Range 续传，未完成部分保留为 <code>.part</code>。</p>
+      </section>
+
+      <section class="view hidden" data-view="shares">
+        <div class="pane-head">
+          <h1>我的分享</h1>
+          <span class="spacer"></span>
+          <button class="btn ghost sm" id="shareRefresh">刷新</button>
+        </div>
+        <div id="shareList"></div>
+      </section>
+
+      <section class="view hidden" data-view="recycle">
+        <div class="pane-head">
+          <h1>回收站</h1>
+          <span class="spacer"></span>
+          <button class="btn ghost sm" id="recycleRefresh">刷新</button>
+        </div>
+        <div id="recycleList" class="list recycle" tabindex="0" role="listbox"></div>
+        <p class="note">彻底删除会立即释放空间且不可恢复。</p>
+      </section>
+
+      <section class="view hidden settings" data-view="settings">
+        <div class="pane-head"><h1>设置</h1></div>
+
+        <div class="group">
+          <div class="group-head"><i class="i i-account" aria-hidden="true"></i><h2>账号</h2></div>
+          <div class="expander">
+            <span class="avatar lg" id="pfAvatar" aria-hidden="true"></span>
+            <div class="expander-text">
+              <div class="t1" id="pfWho"></div>
+              <div class="t2" id="pfHandle"></div>
+              <div class="row tight">
+                <button class="btn sm" id="pfAvatarBtn">更换头像</button>
+                <button class="btn sm ghost hidden" id="pfAvatarClear">移除头像</button>
+              </div>
+            </div>
+          </div>
+          <div class="setting">
+            <div class="s-label"><span>昵称</span><em class="t2" id="pfNameCount"></em></div>
+            <input id="pfName" maxlength="40">
+          </div>
+          <div class="setting">
+            <div class="s-label"><span>简介</span><em class="t2" id="pfBioCount"></em></div>
+            <textarea id="pfBio" rows="3" maxlength="240"></textarea>
+          </div>
+          <div class="setting action">
+            <button class="btn" id="pfSave">保存昵称与简介</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-head"><i class="i i-flame" aria-hidden="true"></i><h2>外观</h2></div>
+          <div class="setting">
+            <div class="s-label"><span>主题</span></div>
+            <div class="seg" id="segTheme" role="group">
+              <button type="button" data-v="auto">跟随系统</button>
+              <button type="button" data-v="dark">深色</button>
+              <button type="button" data-v="light">浅色</button>
+            </div>
+          </div>
+          <div class="setting">
+            <div class="s-label"><span>强调色</span></div>
+            <div class="swatches" id="segAccent" role="group">
+              <button type="button" data-v="ember" title="篝火橙"><i class="sw-dot"></i><span>篝火橙</span></button>
+              <button type="button" data-v="amber" title="琥珀"><i class="sw-dot"></i><span>琥珀</span></button>
+              <button type="button" data-v="pine" title="松绿"><i class="sw-dot"></i><span>松绿</span></button>
+              <button type="button" data-v="violet" title="夜紫"><i class="sw-dot"></i><span>夜紫</span></button>
+              <button type="button" data-v="steel" title="钢青"><i class="sw-dot"></i><span>钢青</span></button>
+            </div>
+          </div>
+          <div class="setting">
+            <div class="s-label"><span>列表密度</span></div>
+            <div class="seg" id="segDensity" role="group">
+              <button type="button" data-v="comfy">舒适</button>
+              <button type="button" data-v="compact">紧凑</button>
+            </div>
+          </div>
+          <label class="toggle"><span>界面动效</span><input type="checkbox" id="setMotion"><i aria-hidden="true"></i></label>
+        </div>
+
+        <div class="group">
+          <div class="group-head"><i class="i i-link" aria-hidden="true"></i><h2>连接</h2></div>
+          <div class="setting">
+            <div class="s-label"><span>服务器地址</span><em class="t2" id="connKind"></em></div>
+            <div class="row">
+              <input id="setUrl" spellcheck="false">
+              <button class="btn" id="setUrlSave">保存并测试</button>
+            </div>
+          </div>
+          <label class="toggle" id="setAckRow"><span>我知情：使用公网明文 http 连接</span><input type="checkbox" id="setAck"><i aria-hidden="true"></i></label>
+          <div class="setting static"><div class="s-label"><span>会话</span></div><div class="t2" id="vaultNote"></div></div>
+          <div class="setting action row">
+            <button class="btn ghost" id="reloginBtn">重新登录</button>
+            <button class="btn ghost danger" id="logoutBtn">退出登录</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-head"><i class="i i-drive" aria-hidden="true"></i><h2>本地</h2></div>
+          <div class="setting">
+            <div class="s-label"><span>下载目录</span><em class="t2" id="diskInfo"></em></div>
+            <div class="row">
+              <input id="setDir" spellcheck="false">
+              <button class="btn ghost" id="setDirPick">选择…</button>
+              <button class="btn ghost" id="setDirBest">移到空间最大的盘</button>
+            </div>
+          </div>
+          <label class="toggle"><span>关闭窗口后留在托盘</span><input type="checkbox" id="setTray"><i aria-hidden="true"></i></label>
+          <label class="toggle"><span>传输完成时发系统通知</span><input type="checkbox" id="setNotify"><i aria-hidden="true"></i></label>
+          <label class="toggle"><span>启动时不显示窗口</span><input type="checkbox" id="setHidden"><i aria-hidden="true"></i></label>
+        </div>
+
+        <div class="group">
+          <div class="group-head"><i class="i i-info" aria-hidden="true"></i><h2>关于与更新</h2></div>
+          <div class="setting static">
+            <div class="s-label"><span>当前客户端版本</span><em class="t2" id="verServer"></em></div>
+            <div class="t1" id="verNow">—</div>
+          </div>
+          <div class="setting action row">
+            <button class="btn" id="updCheck">检查更新</button>
+            <button class="btn primary hidden" id="updDownload">下载最新版</button>
+            <span class="spacer"></span>
+            <span class="t2" id="updNote"></span>
+          </div>
+          <div class="setting static hidden" id="updDetail">
+            <div class="s-label"><span>新版本</span><em class="t2" id="updSize"></em></div>
+            <div class="t2" id="updNotes"></div>
+            <div class="t2" id="updHash"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-head"><i class="i i-lock" aria-hidden="true"></i><h2>修改密码</h2></div>
+          <div class="setting"><div class="s-label"><span>原密码</span></div><input id="pfOld" type="password" autocomplete="current-password"></div>
+          <div class="setting"><div class="s-label"><span>新密码</span></div><input id="pfNew" type="password" autocomplete="new-password"></div>
+          <div class="setting"><div class="s-label"><span>确认新密码</span></div><input id="pfNew2" type="password" autocomplete="new-password"></div>
+          <div class="setting action"><button class="btn" id="pfPassBtn">修改密码</button></div>
+          <div id="pfErr" class="flyout-err hidden"></div>
+        </div>
+        <div class="tail"></div>
+      </section>
+
+      <aside class="details hidden" id="details">
+        <div class="d-head"><h2>详情</h2><button class="icon-btn" id="detailsClose" title="关闭"><i class="i i-close"></i></button></div>
+        <div class="d-body" id="dBody"></div>
+      </aside>
+      </div>
+    </main>
+  </div>
+
+  <footer class="sbar">
+    <span id="statusText">就绪</span>
+    <span class="spacer"></span>
+    <span id="transferSummary"></span>
+  </footer>
+</div>
+
+<div class="dropveil hidden" id="dropVeil"><div class="dropcard"><i class="i i-upload"></i><span>松手上传到当前目录</span></div></div>
+
+<dialog id="loginDialog" class="flyout">
+  <form method="dialog" class="card-form">
+    <h2>连接到篝火云盘</h2>
+    <div class="setting"><div class="s-label"><span>服务器</span></div><input id="lgUrl" spellcheck="false"></div>
+    <label class="toggle hidden" id="lgAckRow"><span>我知情：这是公网明文 http 地址</span><input type="checkbox" id="lgAck"><i aria-hidden="true"></i></label>
+    <div class="setting"><div class="s-label"><span>用户名</span></div><input id="lgUser" autocomplete="username"></div>
+    <div class="setting"><div class="s-label"><span>密码</span></div><input id="lgPass" type="password" autocomplete="current-password"></div>
+    <label class="toggle"><span>记住密码（DPAPI 加密，仅本机可解）</span><input type="checkbox" id="lgRemember"><i aria-hidden="true"></i></label>
+    <div id="lgErr" class="flyout-err hidden"></div>
+    <div class="row end">
+      <button type="button" class="btn ghost" id="lgSkip">稍后</button>
+      <button type="button" class="btn" id="lgGo">登录</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="previewDialog" class="lightbox">
+  <header class="lb-head">
+    <button class="icon-btn" id="pvClose" title="关闭（Esc）"><i class="i i-close"></i></button>
+    <div class="lb-title"><div id="pvName"></div><div class="t2" id="pvMeta"></div></div>
+    <button class="icon-btn hidden" id="pvRetry" title="重试"><i class="i i-refresh"></i></button>
+    <button class="icon-btn" id="pvDownload" title="下载"><i class="i i-download"></i></button>
+  </header>
+  <button class="lb-nav prev hidden" id="pvPrev" title="上一个（←）"><i class="i i-chevleft"></i></button>
+  <div class="lb-body" id="pvBody"></div>
+  <button class="lb-nav next hidden" id="pvNext" title="下一个（→）"><i class="i i-chevright"></i></button>
+  <footer class="lb-foot" id="pvFoot"></footer>
+</dialog>
+
+<dialog id="askDialog" class="flyout">
+  <form method="dialog" class="card-form">
+    <h2 id="askTitle"></h2>
+    <p class="t2" id="askHint"></p>
+    <input id="askInput">
+    <div id="askSlot" class="ask-slot hidden"></div>
+    <div id="askErr" class="flyout-err hidden"></div>
+    <div class="row end">
+      <button type="button" class="btn ghost" id="askCancel">取消</button>
+      <button type="button" class="btn" id="askOk">确定</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="shareDialog" class="flyout">
+  <form method="dialog" class="card-form">
+    <h2>创建分享链接</h2>
+    <p class="t2" id="shName"></p>
+    <div class="setting"><div class="s-label"><span>有效期</span></div>
+      <select id="shExpire">
+        <option value="0">永久</option>
+        <option value="3600">1 小时</option>
+        <option value="86400">1 天</option>
+        <option value="604800">7 天</option>
+        <option value="2592000">30 天</option>
+      </select>
+    </div>
+    <div class="setting"><div class="s-label"><span>访问次数上限（0 为不限）</span></div><input id="shHits" inputmode="numeric"></div>
+    <div class="setting"><div class="s-label"><span>访问密码（留空为无）</span></div><input id="shPass"></div>
+    <div id="shErr" class="flyout-err hidden"></div>
+    <div class="row end">
+      <button type="button" class="btn ghost" id="shCancel">取消</button>
+      <button type="button" class="btn" id="shOk">创建</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>

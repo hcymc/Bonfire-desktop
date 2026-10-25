@@ -56,8 +56,6 @@ npm start          # 需要本地或远程有一个 gopan 服务端
 npm test           # 单元测试（纯逻辑，不需要 Electron）
 ```
 
-Windows 下也可以直接双击 `启动-桌面端.bat` / `打包-桌面端.bat`。
-
 网络受限的环境可把 `.npmrc.example` 复制成 `.npmrc` 换镜像；请不要为此改全局 npm 配置。
 
 ## 打包

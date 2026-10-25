@@ -85,11 +85,31 @@ export class DriveClient {
   }
 
   // ---- auth ----
-  login(username, password) {
-    return this.#json('POST', '/api/auth/login', { body: { username, password } });
+  login(username, password, device) {
+    return this.#json('POST', '/api/auth/login', {
+      body: { username, password, ...(device ? { device } : {}) },
+    });
   }
-  register(username, password) {
-    return this.#json('POST', '/api/auth/register', { body: { username, password } });
+  register(username, password, email, code) {
+    return this.#json('POST', '/api/auth/register', {
+      body: { username, password, ...(email ? { email, code } : {}) },
+    });
+  }
+  // ---- 邮箱验证 ----
+  sendRegisterCode(email) {
+    return this.#json('POST', '/api/auth/register/send-code', { body: { email } });
+  }
+  sendResetCode(username) {
+    return this.#json('POST', '/api/auth/reset/send-code', { body: { username } });
+  }
+  resetPassword(username, email, code, newPassword) {
+    return this.#json('POST', '/api/auth/reset', { body: { username, email, code, newPassword } });
+  }
+  sendBindCode(email) {
+    return this.#json('POST', '/api/me/email/send-code', { body: { email } });
+  }
+  bindEmail(email, code) {
+    return this.#json('POST', '/api/me/email', { body: { email, code } });
   }
   logout() {
     return this.#json('POST', '/api/auth/logout', { body: {} });

@@ -113,6 +113,7 @@ button { font: inherit; color: inherit; }
 .i-view::before { content: "\00E890"; }
 .i-account::before { content: "\00E77B"; }
 .i-lock::before { content: "\00E72E"; }
+.i-mail::before { content: "\00E715"; }
 .i-drive::before { content: "\00EDA2"; }
 .i-check::before { content: "\00E73E"; }
 .i-chevright::before { content: "\00E76C"; }
@@ -136,6 +137,7 @@ html[data-icons="fallback"] .i-search::before { content: "\1F50D"; }
 html[data-icons="fallback"] .i-settings::before { content: "\2699"; }
 html[data-icons="fallback"] .i-account::before { content: "\1F464"; }
 html[data-icons="fallback"] .i-lock::before { content: "\1F512"; }
+html[data-icons="fallback"] .i-mail::before { content: "\2709"; }
 
 /* ---------- shell ---------- */
 .shell { display: flex; flex-direction: column; height: 100%; }
@@ -493,3 +495,16 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
   .list-head span[data-sort].c-size, .list .r .c-size { display: none; }
   .list.recycle .r { grid-template-columns: 36px minmax(0, 1fr) 64px; }
 }
+
+/* 未绑邮箱提醒条 */
+.email-nudge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--warn, #9a6200) 14%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--warn, #9a6200) 34%, transparent);
+  font-size: 12.5px;
+  color: var(--warn, #9a6200);
+}
+.email-nudge span { flex: 1; min-width: 0; }

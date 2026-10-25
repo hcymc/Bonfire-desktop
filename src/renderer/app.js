@@ -4,6 +4,7 @@ import {
 import { setupTransfer } from './transfer.js';
 import { setupPreview, openPreview, previewable } from './preview.js';
 import { setupSettings, hydrate } from './settings.js';
+import { setupEmailVerify } from './email-verify.js';
 
 const state = {
   boot: null,
@@ -34,6 +35,7 @@ async function boot() {
     server: b.server,
     authed: b.authed,
     profile: b.profile,
+    email: b.email ?? null,
     downloadDir: b.downloadDir,
   });
   applyAppearance(b.settings);
@@ -43,8 +45,19 @@ async function boot() {
   setupTransfer({ initial: b.transfers, downloadDir: b.downloadDir });
   setupSettings({ state, refreshIdentity: renderIdentity, onServerChanged: () => location.reload() });
   wireChrome();
+  const emailVerify = setupEmailVerify(state, {
+    onLoggedIn: async (user) => {
+      renderIdentity(user);
+      await loadFiles();
+      emailVerify?.syncEmail(state.email);
+      maybeEmailNudge();
+    },
+    refreshSettings: () => { if (state.view === 'settings') hydrate(); },
+  });
   wireList();
   wireDrag();
+  wireEmailNudge();
+  maybeEmailNudge();
   window.bonfire.onWindowState(({ maximized }) => document.body.classList.toggle('maximized', !!maximized));
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyAppearance(state.settings));
   window.bonfire.onFilesChanged(async () => {
@@ -81,6 +94,26 @@ function renderIdentity(profile) {
   $('#quotaHost').textContent = profile ? `@${profile.username}` : '未连接';
   renderQuota();
   if (state.view === 'settings') hydrate();
+}
+
+// 未绑邮箱提醒：登录后显示，关闭后本机不再提示
+function maybeEmailNudge() {
+  const box = $('#emailNudge');
+  if (!box) return;
+  const need = state.authed && state.email == null && localStorage.getItem('emailNudgeHide') !== '1';
+  box.classList.toggle('hidden', !need);
+}
+
+function wireEmailNudge() {
+  $('#emailNudgeGo')?.addEventListener('click', () => {
+    $('#emailNudge').classList.add('hidden');
+    showView('settings');
+    setTimeout(() => $('#pfEmail')?.focus(), 120);
+  });
+  $('#emailNudgeClose')?.addEventListener('click', () => {
+    $('#emailNudge').classList.add('hidden');
+    localStorage.setItem('emailNudgeHide', '1');
+  });
 }
 
 function renderQuota() {
@@ -126,41 +159,10 @@ async function probeLoginUrl() {
   $('#lgAckRow').classList.toggle('hidden', !(r.ok && r.needsAck));
 }
 
-async function doLogin() {
-  const go = $('#lgGo');
-  go.disabled = true;
-  go.textContent = '连接中…';
-  $('#lgErr').classList.add('hidden');
-  try {
-    const url = $('#lgUrl').value.trim();
-    if (!state.server?.ok || state.server.url !== url) {
-      const r = await window.bonfire.setServer({ url, allowInsecureRemote: $('#lgAck').checked });
-      state.server = r.server;
-      if (!r.reachable && r.note) loginError(r.note);
-    }
-    const { user } = await window.bonfire.login({
-      username: $('#lgUser').value.trim(),
-      password: $('#lgPass').value,
-      remember: $('#lgRemember').checked,
-    });
-    state.authed = true;
-    renderIdentity(user);
-    $('#lgPass').value = '';
-    $('#loginDialog').close();
-    await loadFiles();
-    toast(`已登录为 ${user.display_name || user.username}`, 'ok');
-  } catch (err) {
-    loginError(err.message);
-  } finally {
-    go.disabled = false;
-    go.textContent = '登录';
-  }
-}
-
 // ---------- chrome ----------
 function wireChrome() {
   $('#accountBtn').addEventListener('click', () => showView('settings'));
-  $('#lgGo').addEventListener('click', doLogin);
+  // 登录/注册由 email-verify.js 统一接管（含邮箱验证码与忘记密码）
   $('#lgUrl').addEventListener('input', probeLoginUrl);
   $('#lgSkip').addEventListener('click', () => {
     $('#loginDialog').close();

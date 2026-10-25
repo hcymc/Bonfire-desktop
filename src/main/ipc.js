@@ -70,6 +70,9 @@ export function registerIpc({ ipcMain, state, deps }) {
   const vaultSet = (k, v) => state.vault.set(k, v);
 
   // ---- boot / session ----
+  // 当前账号绑定的邮箱（null=未绑定），随 boot/login/session-check 同步
+  let clientEmail = null;
+
   handle('bonfire:boot', () => ({
     version: app.getVersion(),
     platform: process.platform,
@@ -77,6 +80,7 @@ export function registerIpc({ ipcMain, state, deps }) {
     server: state.serverKind,
     authed: state.authed,
     profile: state.profile,
+    email: clientEmail,
     vaultCanPersist: vaultAvailable(),
     transfers: state.transferLog(),
     downloadDir: state.downloadDir(),
@@ -85,10 +89,11 @@ export function registerIpc({ ipcMain, state, deps }) {
   handle('bonfire:session:check', async () => {
     if (!state.authed) return { authed: false };
     try {
-      const { user } = await client.me();
-      state.setProfile(user);
+      const me = await client.me();
+      state.setProfile(me.user);
+      clientEmail = me.email ?? null;
       persistSession();
-      return { authed: true, profile: user };
+      return { authed: true, profile: me.user, email: clientEmail };
     } catch (err) {
       if (err.status === 401) {
         state.vault.unset('cookieJar');
@@ -99,11 +104,15 @@ export function registerIpc({ ipcMain, state, deps }) {
     }
   });
 
-  handle('bonfire:login', async ({ username, password, remember }) => {
+  handle('bonfire:login', async ({ username, password, remember, register, email, code }) => {
     const u = String(username || '').trim();
     if (!u || typeof password !== 'string' || !password) throw new Error('请输入用户名和密码');
-    const r = await client.login(u, password);
-    const { user } = await client.me();
+    const r = register
+      ? await client.register(u, password, email ? String(email) : undefined, code ? String(code) : undefined)
+      : await client.login(u, password);
+    const me = await client.me();
+    const user = me.user;
+    clientEmail = me.email ?? null;
     state.setProfile(user);
     persistSession();
     if (remember && vaultAvailable()) state.vault.set('credential', JSON.stringify({ username: u, password }));
@@ -277,6 +286,15 @@ export function registerIpc({ ipcMain, state, deps }) {
   });
   handle('bonfire:profile:password', ({ oldPassword, newPassword }) =>
     client.changePassword(String(oldPassword ?? ''), String(newPassword ?? '')));
+
+  // ---- 邮箱验证 ----
+  handle('bonfire:verify:register-send', ({ email }) => client.sendRegisterCode(String(email ?? '')));
+  handle('bonfire:verify:reset-send', ({ username }) => client.sendResetCode(String(username ?? '')));
+  handle('bonfire:verify:reset', ({ username, email, code, newPassword }) =>
+    client.resetPassword(String(username ?? ''), String(email ?? ''), String(code ?? ''), String(newPassword ?? '')));
+  handle('bonfire:verify:bind-send', ({ email }) => client.sendBindCode(String(email ?? '')));
+  handle('bonfire:verify:bind', ({ email, code }) =>
+    client.bindEmail(String(email ?? ''), String(code ?? '')));
 
   handle('bonfire:avatar:pick', async () => {
     const r = await dialog.showOpenDialog({

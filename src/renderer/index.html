@@ -21,6 +21,12 @@
 </head>
 <body>
 <div class="shell">
+  <div class="email-nudge hidden" id="emailNudge">
+    <i class="i i-mail" aria-hidden="true"></i>
+    <span>你还没有绑定邮箱——绑定后忘记密码可自助找回。</span>
+    <button type="button" class="btn sm" id="emailNudgeGo">去绑定</button>
+    <button type="button" class="icon-btn" id="emailNudgeClose" title="关闭提醒"><i class="i i-close"></i></button>
+  </div>
   <header class="tbar">
     <span class="appicon" aria-hidden="true"><i class="i i-flame"></i></span>
     <span class="apptitle">篝火云盘</span>
@@ -220,6 +226,21 @@
           </div>
         </div>
 
+        <div class="group" id="pfEmailGroup">
+          <div class="group-head"><i class="i i-mail" aria-hidden="true"></i><h2>绑定邮箱</h2></div>
+          <div class="setting"><div class="s-label"><span>当前邮箱</span></div><div class="t2" id="pfEmailNow">未绑定</div></div>
+          <div class="setting"><div class="s-label"><span>新邮箱</span><em class="t2">绑定后可用于找回密码</em></div><input id="pfEmail" type="email" autocomplete="email"></div>
+          <div class="setting">
+            <div class="s-label"><span>邮箱验证码</span></div>
+            <div class="row tight">
+              <input id="pfEmailCode" inputmode="numeric" maxlength="8">
+              <button type="button" class="btn sm" id="pfEmailSend">发验证码</button>
+            </div>
+          </div>
+          <div class="setting action"><button class="btn" id="pfEmailBtn">绑定邮箱</button></div>
+          <div id="pfEmailErr" class="flyout-err hidden"></div>
+        </div>
+
         <div class="group">
           <div class="group-head"><i class="i i-lock" aria-hidden="true"></i><h2>修改密码</h2></div>
           <div class="setting"><div class="s-label"><span>原密码</span></div><input id="pfOld" type="password" autocomplete="current-password"></div>
@@ -250,16 +271,47 @@
 
 <dialog id="loginDialog" class="flyout">
   <form method="dialog" class="card-form">
-    <h2>连接到篝火云盘</h2>
+    <div class="row between">
+      <h2 id="lgTitle">连接到篝火云盘</h2>
+      <button type="button" class="btn sm ghost" id="lgMode">注册</button>
+    </div>
     <div class="setting"><div class="s-label"><span>服务器</span></div><input id="lgUrl" spellcheck="false"></div>
     <label class="toggle hidden" id="lgAckRow"><span>我知情：这是公网明文 http 地址</span><input type="checkbox" id="lgAck"><i aria-hidden="true"></i></label>
     <div class="setting"><div class="s-label"><span>用户名</span></div><input id="lgUser" autocomplete="username"></div>
+    <div class="setting hidden" id="lgEmailRow"><div class="s-label"><span>邮箱（注册必填）</span><em class="t2">用于找回密码</em></div><input id="lgEmail" type="email" autocomplete="email"></div>
+    <div class="setting hidden" id="lgCodeRow">
+      <div class="s-label"><span>邮箱验证码</span></div>
+      <div class="row tight">
+        <input id="lgCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+        <button type="button" class="btn sm" id="lgSendCode">发验证码</button>
+      </div>
+    </div>
     <div class="setting"><div class="s-label"><span>密码</span></div><input id="lgPass" type="password" autocomplete="current-password"></div>
-    <label class="toggle"><span>记住密码（DPAPI 加密，仅本机可解）</span><input type="checkbox" id="lgRemember"><i aria-hidden="true"></i></label>
+    <label class="toggle" id="lgRememberRow"><span>记住密码（DPAPI 加密，仅本机可解）</span><input type="checkbox" id="lgRemember"><i aria-hidden="true"></i></label>
     <div id="lgErr" class="flyout-err hidden"></div>
     <div class="row end">
+      <button type="button" class="btn ghost" id="lgForgot">忘记密码？</button>
+      <span style="flex:1"></span>
       <button type="button" class="btn ghost" id="lgSkip">稍后</button>
       <button type="button" class="btn" id="lgGo">登录</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="resetDialog" class="flyout">
+  <form method="dialog" class="card-form">
+    <h2>找回密码</h2>
+    <div class="t2">用账号绑定的邮箱验证身份。</div>
+    <div class="setting"><div class="s-label"><span>用户名</span></div><input id="rsUser" autocomplete="username"></div>
+    <div class="setting action"><button type="button" class="btn" id="rsSend">发送验证码</button></div>
+    <div class="setting"><div class="s-label"><span>绑定邮箱</span></div><input id="rsEmail" type="email" autocomplete="email"></div>
+    <div class="setting"><div class="s-label"><span>邮箱验证码</span></div><input id="rsCode" inputmode="numeric" maxlength="8"></div>
+    <div class="setting"><div class="s-label"><span>新密码</span></div><input id="rsNew" type="password" autocomplete="new-password"></div>
+    <div id="rsMsg" class="t2"></div>
+    <div id="rsErr" class="flyout-err hidden"></div>
+    <div class="row end">
+      <button type="button" class="btn ghost" id="rsClose">关闭</button>
+      <button type="button" class="btn" id="rsGo">重置密码</button>
     </div>
   </form>
 </dialog>

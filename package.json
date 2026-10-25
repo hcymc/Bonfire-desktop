@@ -1,6 +1,6 @@
 {
   "name": "bonfire-desktop",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "private": false,
   "type": "module",
   "description": "Bonfire desktop client — an Electron shell over the gopan drive API, with all HTTP in the main process and credentials kept in the OS keystore.",
@@ -29,6 +29,7 @@
     "start:debug": "electron . --inspect-main",
     "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.js\"",
     "icons": "node scripts/make-icons.mjs",
+    "check:config": "node scripts/check-builder-config.mjs",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win --x64 && electron-builder --win --arm64 && node scripts/pack-portable.mjs",
     "dist:win:x64": "electron-builder --win --x64",
@@ -110,7 +111,6 @@
           ]
         }
       ],
-      "desktopName": "com.bonfire.desktop",
       "syncDesktopName": true
     }
   }

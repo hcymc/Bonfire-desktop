@@ -7,3 +7,5 @@ release/
 # README tells people to copy .npmrc.example here; that file is per-machine
 # (registry mirror, cache path) and must never be tracked.
 .npmrc
+# Local double-click wrappers around the npm scripts; not part of the published repo.
+*.bat
